@@ -1,15 +1,31 @@
 #!/usr/bin/env bash
 
-RES_FOUND=100
-RES_NETWORK_ERROR=10
-RES_TICK=0
+function config() {
+  RES_FOUND=100
+  RES_NETWORK_ERROR=10
+  RES_TICK=0
+
+  case $ENV in
+    PROD)
+      CHECK_INTERVAL=67
+      RETRY_INTERVAL=5
+      ;;
+    DEV)
+      CHECK_INTERVAL=10
+      RETRY_INTERVAL=3
+      ;;
+    *)
+      exit 1
+  esac
+}
 
 function dostep() {
   timestamp="$1"
   rm current_parsed
 
   curl "https://terminyleczenia.nfz.gov.pl/?search=true&Case=2&ForChildren=true&ServiceName=PORADNIA+NEUROLOGICZNA+DLA+DZIECI&State=&Locality=WARSZAWA" \
-  -o current_source.html
+  -o current_source.html \
+  --connect-timeout 20
   if [ $? -ne 0 ]; then
     echo NETWORK ERROR > "output/${timestamp}_ERROR"
     return $RES_NETWORK_ERROR
@@ -43,6 +59,9 @@ function dostep() {
   return $res
 }
 
+ENV=$(echo "${1:-PROD}" | tr '[:lower:]' '[:upper:]')
+config
+
 while true
 do
   timestamp=$(date +"%F@%R:%S")
@@ -56,7 +75,7 @@ do
       echo -------------
       play -q -V0 mixkit-confirmation-tone-2867.wav gain -n -15
 
-      sleep 67
+      sleep $CHECK_INTERVAL
       ;;
     $RES_FOUND)
       echo --- NEW DATA! ---
@@ -68,20 +87,21 @@ do
       done
       spd-say -i +100 -r -15 "There is NEW DATA!"
 
-      sleep 30
+      sleep $CHECK_INTERVAL
       ;;
     $RES_NETWORK_ERROR)
       echo --- NETWORK ERROR! ---
       echo ----------------------
       play -q -V0 mixkit-wrong-long-buzzer-954.wav gain -n 10
 
-      sleep 5
+      sleep $RETRY_INTERVAL
       ;;
       
     *)
       echo --- UNEXPECTED ERROR! ---
       echo -------------------------
       play -q -V0 mixkit-wrong-long-buzzer-954.wav gain -n 10 repeat 5 reverb
+
       exit 1
       ;;
   esac
