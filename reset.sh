@@ -1,6 +1,6 @@
-rm -r output
-rm current_source.html
-rm current_parsed
-rm last_parsed
+rm -fr output
+rm -f current_source.html
+rm -f current_parsed
+rm -f last_parsed
 
 mkdir output

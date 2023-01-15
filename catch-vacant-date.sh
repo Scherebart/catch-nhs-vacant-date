@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
 
+function env() {
+  ENV=$(echo "${1:-PROD}" | tr '[:lower:]' '[:upper:]')
+
+  if [[ ! "$ENV" =~ ^(DEV|PROD)$ ]]; then
+    echo BAD ENV "\"$ENV\""
+    exit 1
+  fi
+
+  echo ================
+  echo === ENV $ENV ===
+  echo ================
+}
+
 function config() {
   RES_FOUND=100
   RES_NETWORK_ERROR=10
@@ -21,11 +34,11 @@ function config() {
 
 function dostep() {
   timestamp="$1"
-  rm current_parsed
+  rm -f current_parsed
 
   curl "https://terminyleczenia.nfz.gov.pl/?search=true&Case=2&ForChildren=true&ServiceName=PORADNIA+NEUROLOGICZNA+DLA+DZIECI&State=&Locality=WARSZAWA" \
   -o current_source.html \
-  --connect-timeout 20
+  --connect-timeout 15
   if [ $? -ne 0 ]; then
     echo NETWORK ERROR > "output/${timestamp}_ERROR"
     return $RES_NETWORK_ERROR
@@ -59,7 +72,8 @@ function dostep() {
   return $res
 }
 
-ENV=$(echo "${1:-PROD}" | tr '[:lower:]' '[:upper:]')
+
+env "$@"
 config
 
 while true
