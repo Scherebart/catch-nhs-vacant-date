@@ -1,4 +1,7 @@
 output
-current_parsed
 current_source.html
-last_parsed
+current_parsed_facilities
+current_parsed_status_dates
+current_parsed_vacant_dates
+current_parsed
+previous_parsed
